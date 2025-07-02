@@ -10,8 +10,11 @@ import {
   DollarSign,
   LineChart,
   PieChart,
-  ArrowUpRight,
-  ArrowDownRight,
+  Scale,
+  BrainCircuit,
+  Bot,
+  BellRing
+  
 } from "lucide-react"
 
 export function TradingIconsSkeleton() {
@@ -24,14 +27,19 @@ export function TradingIconsSkeleton() {
     { Icon: DollarSign, color: "text-green-500", delay: 0.5 },
     { Icon: LineChart, color: "text-indigo-500", delay: 0.6 },
     { Icon: PieChart, color: "text-pink-500", delay: 0.7 },
-    { Icon: ArrowUpRight, color: "text-cyan-500", delay: 0.8 },
-    { Icon: ArrowDownRight, color: "text-orange-500", delay: 0.9 },
+    { Icon: Scale, color: "text-yellow-500", delay: 0.8 },
+    { Icon: BrainCircuit, color: "text-pink-500", delay: 0.9},
+    { Icon: Bot, color: "text-blue-500", delay: 1.0 },
+    { Icon: BellRing, color: "text-emerald-500", delay: 1.1 },
   ]
 
   return (
-    <div className="relative h-full w-full flex items-center justify-center overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-white to-slate-50" />
+    <div className="relative rounded-2xl h-full w-full flex items-center justify-center overflow-hidden">
+      {/* Outer glow effect */}
+        <div className="absolute -inset-2 rounded-xl bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 opacity-50 blur-3xl -z-10" />
+
+        {/* Background gradient */}
+        <div className="absolute inset-2 rounded-lg border-white/30 backdrop-blur-sm" />
 
       {/* Floating icons */}
       <div className="relative grid grid-cols-4 gap-4 p-8">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 interface Stats {
   totalSignals: number
@@ -51,19 +51,43 @@ export function useStats() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const etagRef = useRef<string | null>(null)
 
-  const fetchStats = async () => {
+  const fetchStats = async (showLoading = true) => {
     try {
-      setLoading(true)
+      // Solo mostrar el indicador de carga en la carga inicial o cuando se solicita explícitamente
+      if (showLoading && isInitialLoad) {
+        setLoading(true)
+      }
       setError(null)
+
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      }
+
+      // Añadir ETag si existe para aprovechar el mecanismo 304 Not Modified
+      if (etagRef.current) {
+        headers["If-None-Match"] = etagRef.current
+      }
 
       const response = await fetch("/api/signals/stats", {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         cache: "no-store",
       })
+
+      // Guardar el nuevo ETag si está presente
+      const newEtag = response.headers.get("ETag")
+      if (newEtag) {
+        etagRef.current = newEtag
+      }
+
+      // Si el servidor devuelve 304 Not Modified, no hay necesidad de actualizar los datos
+      if (response.status === 304) {
+        console.log("Stats not modified, using cached data")
+        return
+      }
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -84,18 +108,21 @@ export function useStats() {
       console.error("Stats fetch error:", err)
       setError(err instanceof Error ? err.message : "Failed to fetch stats")
     } finally {
-      setLoading(false)
+      if (showLoading && isInitialLoad) {
+        setLoading(false)
+        setIsInitialLoad(false)
+      }
     }
   }
 
   useEffect(() => {
-    fetchStats()
+    fetchStats(true)
 
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchStats, 30000)
+    // Auto-refresh every 30 seconds, pero sin mostrar indicador de carga
+    const interval = setInterval(() => fetchStats(false), 30000)
 
     return () => clearInterval(interval)
   }, [])
 
-  return { stats, loading, error, refetch: fetchStats }
+  return { stats, loading, error, refetch: () => fetchStats(true) }
 }

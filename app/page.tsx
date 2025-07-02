@@ -1,11 +1,14 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import { FlipWords } from "@/components/ui/flip-words"
 import { StatsCard } from "@/components/stats-card"
 import { AdvancedStatsCards } from "@/components/advanced-stats-cards"
 import { RecentSignalsTable } from "@/components/recent-signals-table"
 import { AdvancedCharts } from "@/components/advanced-charts"
 import { EcosystemSection } from "@/components/ecosystem-section"
+import { ChatExample } from "@/components/chat-example"
 import { useStats } from "@/hooks/use-stats"
 import { TrendingUp, Activity, DollarSign, Target, RefreshCw, Zap, BarChart3, LineChart, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -14,16 +17,21 @@ import Link from "next/link"
 
 export default function Dashboard() {
   const { stats, loading, error, refetch } = useStats()
+  const [mounted, setMounted] = useState(false)
+  
+  // Evitar hidratación renderizando fechas solo en el cliente
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="text-red-500 text-xl font-semibold">Error loading dashboard</div>
-          <p className="text-slate-600">{error}</p>
-          <Button onClick={refetch} variant="outline">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600">Error</h1>
+          <p className="text-slate-600 mt-2">{error}</p>
+          <Button onClick={refetch} className="mt-4">
+            Reintentar
           </Button>
         </div>
       </div>
@@ -31,10 +39,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="min-h-screen bg-white/80 backdrop-blur-sm">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
+        <div className="absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]"></div>
         <div className="relative px-6 py-24 sm:px-12 lg:px-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -56,25 +64,22 @@ export default function Dashboard() {
 
             <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
               TVMT5 Signal
-              <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                {" "}
-                Management Platform
-              </span>
             </h1>
 
-            <p className="mt-6 text-xl leading-8 text-slate-300 max-w-2xl mx-auto">
-              Plataforma profesional de señales de trading con análisis integral, procesamiento en tiempo real y
-              seguimiento avanzado de rendimiento.
+            <p className="mt-6 text-xl font-bold leading-8  max-w-2xl mx-auto">
+              <FlipWords 
+                words={[
+                  "señales de trading", 
+                  "Analisis con IA", 
+                  "Gestion de Riesgo Avanzado",
+                  "Operaciones en Riempo Real", 
+                  "Seguimiento Avanzado de Rendimiento"
+                ]} 
+                duration={3000} 
+                className="items-center rounded-full text-white bg-gradient-to-r from-violet-700 via-pink-500 to-blue-600"
+              />
             </p>
 
-            <div className="mt-8 flex justify-center gap-4">
-              <Link href="/dashboard">
-                <Button size="lg" className="bg-white text-slate-900 hover:bg-slate-100">
-                  <Settings className="mr-2 h-5 w-5" />
-                  Manage Signals
-                </Button>
-              </Link>
-            </div>
           </motion.div>
         </div>
       </div>
@@ -83,7 +88,8 @@ export default function Dashboard() {
       <EcosystemSection />
 
       {/* Stats Section */}
-      <div className="px-6 py-12 sm:px-12 lg:px-16">
+      <div className="px-6 py-12 sm:px-12 lg:px-16 relative">
+        <div className="absolute inset-0 h-full w-full bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
         <div className="mx-auto max-w-7xl space-y-12">
           {loading ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -108,6 +114,7 @@ export default function Dashboard() {
                   subtitle="All time"
                   icon={Activity}
                   trend="neutral"
+                  color="from-blue-500 to-cyan-500"
                 />
 
                 <StatsCard
@@ -116,6 +123,7 @@ export default function Dashboard() {
                   subtitle={`${stats.successfulSignals}/${stats.processedSignals} processed`}
                   icon={Target}
                   trend={stats.successRate >= 70 ? "up" : stats.successRate >= 50 ? "neutral" : "down"}
+                  color="from-emerald-500 to-green-500"
                 />
 
                 <StatsCard
@@ -124,6 +132,7 @@ export default function Dashboard() {
                   subtitle={`${stats.winningTrades}W / ${stats.losingTrades}L`}
                   icon={DollarSign}
                   trend={stats.totalPnL > 0 ? "up" : stats.totalPnL < 0 ? "down" : "neutral"}
+                  color="from-amber-500 to-orange-500"
                 />
 
                 <StatsCard
@@ -132,6 +141,7 @@ export default function Dashboard() {
                   subtitle="Pending processing"
                   icon={TrendingUp}
                   trend="neutral"
+                  color="from-rose-500 to-red-500"
                 />
               </motion.div>
 
@@ -185,22 +195,29 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Chat Example Section */}
+      <ChatExample />
+      
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white/50 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-6 py-12 sm:px-12 lg:px-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+      <footer className="border-t border-slate-300 bg-white/50 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-6 py-2 sm:px-12 lg:px-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             {/* Left side - Last updated */}
             <div className="text-sm text-slate-600 text-center md:text-left">
-              Last updated: {stats ? new Date(stats.lastUpdated).toLocaleString() : "Loading..."}
+              Last updated: {stats ? (
+                mounted ? 
+                  new Date(stats.lastUpdated).toLocaleString() : 
+                  "Loading..." // Fallback estático para SSR
+              ) : "Loading..."}
             </div>
 
             {/* Center - Logo */}
             <div className="flex justify-center">
-              <div className="flex flex-col items-center space-y-3">
-                <img src="/logo-tvmt5-signal.svg" alt="TVMT5 Signal Logo" className="h-16 w-16 object-contain" />
+              <div className="flex flex-col items-center space-y-1">
+                <img src="/logo-tvmt5-signal.svg" alt="TVMT5 Signal Logo" className="h-10 w-10 object-contain" />
                 <div className="text-center">
-                  <h3 className="font-bold text-slate-900 text-lg">TVMT5 Signal</h3>
-                  <p className="text-sm text-slate-600">Professional Trading Platform</p>
+                  <h3 className="font-bold text-slate-900 text-base">TVMT5 Signal</h3>
+                  <p className="text-xs text-slate-600">Professional Trading Platform</p>
                 </div>
               </div>
             </div>
@@ -215,7 +232,7 @@ export default function Dashboard() {
           </div>
 
           {/* Bottom section */}
-          <div className="mt-8 pt-8 border-t border-slate-200">
+          <div className="mt-4 pt-4 border-t border-slate-200">
             <div className="text-center text-sm text-slate-500">
               © 2024 TVMT5 Signal Platform. Todos los derechos reservados.
             </div>

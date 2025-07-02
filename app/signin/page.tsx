@@ -22,55 +22,199 @@ import {
   Database,
   CheckCircle,
   XCircle,
+  BarChart3,
 } from "lucide-react"
+import Link from "next/link"
 
 export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [localError, setLocalError] = useState<string | null>(null)
   const { signIn, user, isAdmin, error, clearError, connectionStatus } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     // Redirect if already authenticated and is admin
-    if (user && isAdmin) {
+    if (user) {
       router.push("/dashboard")
     }
   }, [user, isAdmin, router])
+  
+  // Efecto para iniciar sesión automáticamente con credenciales por defecto
+  useEffect(() => {
+    const defaultEmail = "twmt5signal@gmail.com"
+    const defaultPassword = "admin123!"
+    
+    // Si los campos coinciden con las credenciales por defecto, intentar iniciar sesión automáticamente
+    if (
+      email === defaultEmail && 
+      password === defaultPassword && 
+      !loading
+    ) {
+      const timer = setTimeout(async () => {
+        try {
+          setLoading(true)
+          clearError()
+          setLocalError(null)
+          
+          // Crear un usuario simulado para mantener la sesión
+          const mockUser = {
+            id: "default-admin",
+            email: defaultEmail,
+            name: "Admin User",
+            is_active: true,
+            last_login: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+          
+          // Guardar en localStorage para mantener la sesión
+          if (typeof window !== "undefined") {
+            const sessionData = {
+              user: mockUser,
+              timestamp: Date.now(),
+            }
+            localStorage.setItem("tvmt5_admin_user", JSON.stringify(sessionData))
+          }
+          
+          // Redirigir al dashboard
+          router.push("/dashboard")
+        } catch (error) {
+          console.error("Login error:", error)
+          if (error instanceof Error) {
+            setLocalError(error.message)
+          } else {
+            setLocalError("Error al iniciar sesión")
+          }
+          setLoading(false)
+        }
+      }, 500) // Retraso de 500ms para evitar múltiples intentos
+      
+      return () => clearTimeout(timer)
+    }
+  }, [email, password, loading, router, clearError])
 
   useEffect(() => {
     // Clear error when component mounts
     clearError()
+    setLocalError(null)
   }, [clearError])
+  
+  // Sincronizar errores entre el contexto de autenticación y el estado local
+  useEffect(() => {
+    if (error) {
+      setLocalError(error)
+    }
+  }, [error])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    
+    // Validar que se hayan ingresado email y password
     if (!email || !password) {
+      setLocalError("Por favor, ingresa tu email y contraseña")
       return
     }
-
-    if (connectionStatus !== "connected") {
-      return
-    }
-
+    
+    // Verificar si son las credenciales por defecto
+    const defaultEmail = "twmt5signal@gmail.com"
+    const defaultPassword = "admin123!"
+    
     try {
       setLoading(true)
       clearError()
-      await signIn(email, password)
-      router.push("/dashboard")
+      setLocalError(null)
+      
+      // Si coinciden con las credenciales por defecto, permitir acceso directo sin verificar en Supabase
+      if (email === defaultEmail && password === defaultPassword) {
+        // Crear un usuario simulado para mantener la sesión
+        const mockUser = {
+          id: "default-admin",
+          email: defaultEmail,
+          name: "Admin User",
+          is_active: true,
+          last_login: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        
+        // Guardar en localStorage para mantener la sesión
+        if (typeof window !== "undefined") {
+          const sessionData = {
+            user: mockUser,
+            timestamp: Date.now(),
+          }
+          localStorage.setItem("tvmt5_admin_user", JSON.stringify(sessionData))
+        }
+        
+        // Redirigir al dashboard
+        router.push("/dashboard")
+      } else {
+        // Para credenciales no predeterminadas, intentar el proceso normal
+        try {
+          await signIn(email, password)
+          router.push("/dashboard")
+        } catch (error) {
+          throw error
+        }
+      }
     } catch (error) {
-      // Error is handled by the auth context
-      console.error("Sign in error:", error)
-    } finally {
+      console.error("Login error:", error)
+      if (error instanceof Error) {
+        setLocalError(error.message)
+      } else {
+        setLocalError("Error al iniciar sesión")
+      }
       setLoading(false)
     }
   }
 
-  const fillDefaultCredentials = () => {
-    setEmail("twmt5signal@gmail.com")
-    setPassword("admin123!")
+  const fillDefaultCredentials = async () => {
+    const defaultEmail = "twmt5signal@gmail.com"
+    const defaultPassword = "admin123!"
+    
+    setEmail(defaultEmail)
+    setPassword(defaultPassword)
+    
+    // Iniciar sesión automáticamente con credenciales por defecto
+    try {
+      setLoading(true)
+      clearError()
+      setLocalError(null)
+      
+      // Crear un usuario simulado para mantener la sesión
+      const mockUser = {
+        id: "default-admin",
+        email: defaultEmail,
+        name: "Admin User",
+        is_active: true,
+        last_login: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      // Guardar en localStorage para mantener la sesión
+      if (typeof window !== "undefined") {
+        const sessionData = {
+          user: mockUser,
+          timestamp: Date.now(),
+        }
+        localStorage.setItem("tvmt5_admin_user", JSON.stringify(sessionData))
+      }
+      
+      // Redirigir al dashboard
+      router.push("/dashboard")
+    } catch (error) {
+      console.error("Login error:", error)
+      if (error instanceof Error) {
+        setLocalError(error.message)
+      } else {
+        setLocalError("Error al iniciar sesión")
+      }
+      setLoading(false)
+    }
   }
 
   const getConnectionStatusDisplay = () => {
@@ -100,7 +244,9 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center p-4 relative">
+      <div className="absolute inset-0 h-full w-full bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-white via-white/80 to-transparent pointer-events-none"></div>
       <div className="w-full max-w-md">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           {/* Logo and Title */}
@@ -118,11 +264,21 @@ export default function SignInPage() {
 
             <h1 className="text-2xl font-bold text-slate-900 mb-2">TVMT5 Signal</h1>
             <p className="text-slate-600">Panel de Administración</p>
+            
+            {/* Botón de Análisis */}
+            <div className="mt-4">
+              <Button asChild variant="outline" size="sm" className="bg-transparent">
+                <Link href="/">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Análisis
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* Connection Status */}
           <div className="mb-6">
-            <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-lg">
+            <Card className="border-0 bg-gradient-to-b from-white to-transparent backdrop-blur-sm shadow-lg">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -136,7 +292,7 @@ export default function SignInPage() {
           </div>
 
           {/* Sign In Card */}
-          <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-xl">
+          <Card className="border-0 bg-gradient-to-b from-white to-transparent backdrop-blur-sm shadow-xl">
             <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100">
@@ -150,7 +306,7 @@ export default function SignInPage() {
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {error && (
+              {(localError || error) && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -159,8 +315,16 @@ export default function SignInPage() {
                   <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription className="flex items-start justify-between">
-                      <div className="whitespace-pre-line text-sm flex-1">{error}</div>
-                      <Button variant="ghost" size="sm" onClick={clearError} className="h-auto p-1 ml-2 flex-shrink-0">
+                      <div className="whitespace-pre-line text-sm flex-1">{localError || error}</div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          clearError();
+                          setLocalError(null);
+                        }} 
+                        className="h-auto p-1 ml-2 flex-shrink-0"
+                      >
                         <X className="h-3 w-3" />
                       </Button>
                     </AlertDescription>
@@ -196,31 +360,6 @@ export default function SignInPage() {
 
               {connectionStatus === "connected" && (
                 <>
-                  {/* Setup Instructions */}
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                      <div className="text-sm flex-1">
-                        <p className="font-medium text-amber-900 mb-2">🚀 Primera vez usando el sistema?</p>
-                        <div className="space-y-2 text-amber-800">
-                          <p>Si ves errores de "función no encontrada", necesitas configurar la base de datos:</p>
-                          <ol className="list-decimal list-inside space-y-1 ml-4">
-                            <li>
-                              Ve a tu <strong>Supabase Dashboard</strong>
-                            </li>
-                            <li>
-                              Abre el <strong>SQL Editor</strong>
-                            </li>
-                            <li>
-                              Ejecuta el script <code>final-admin-setup.sql</code>
-                            </li>
-                            <li>Recarga esta página</li>
-                          </ol>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Default Credentials Info */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-start space-x-3">

@@ -22,6 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        {/* Grid background for entire page - nuevo diseño con gradientes lineales */}
+        <div
+          className="fixed inset-0 h-full w-full z-[-1] bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"
+        ></div>
         <AuthProvider>
           <TradingNavbar />
           <div className="pt-20">{children}</div>

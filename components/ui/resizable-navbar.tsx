@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button"
 import { useStats } from "@/hooks/use-stats"
 import { useAuth } from "@/lib/auth-context"
 import { TrendingUp, Activity, DollarSign, Target, User, LogOut, BarChart3 } from "lucide-react"
+import { FaUserSecret } from "react-icons/fa"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface NavbarProps {
   children: React.ReactNode
@@ -84,8 +91,8 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
         damping: 50,
       }}
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-transparent px-6 py-3 lg:flex",
-        visible && "bg-white/90 backdrop-blur-md shadow-lg",
+        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full px-6 py-3 lg:flex",
+        visible ? "bg-white/90 backdrop-blur-md shadow-lg" : "bg-gradient-to-b from-white to-transparent",
         className,
       )}
     >
@@ -114,8 +121,8 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         damping: 50,
       }}
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-transparent px-4 py-3 lg:hidden",
-        visible && "bg-white/90 backdrop-blur-md",
+        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between px-4 py-3 lg:hidden",
+        visible ? "bg-white/90 backdrop-blur-md" : "bg-gradient-to-b from-white to-transparent",
         className,
       )}
     >
@@ -257,10 +264,20 @@ export const NavbarActions = () => {
             </Button>
           </Link>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-slate-600 hidden sm:block">{user.name || user.email}</span>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                  <FaUserSecret className="h-4 w-4" />
+                  <span className="text-sm text-slate-600 hidden sm:block">Admin</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  <span>LoggingOut</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       )
@@ -295,10 +312,20 @@ export const NavbarActions = () => {
           </Button>
         </Link>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-slate-600 hidden sm:block">{user?.name || user?.email}</span>
-          <Button variant="ghost" size="sm" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                <FaUserSecret className="h-4 w-4" />
+                <span className="text-sm text-slate-600 hidden sm:block">Admin</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                <LogOut className="h-4 w-4 mr-2" />
+                <span>LoggingOut</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     )
@@ -394,10 +421,20 @@ export const TradingNavbar = () => {
             </Link>
 
             {user && isAdmin ? (
-              <Button onClick={handleSignOut} variant="outline" className="w-full justify-start bg-transparent">
-                <LogOut className="h-4 w-4 mr-2" />
-                Cerrar Sesión
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start bg-transparent">
+                    <FaUserSecret className="h-4 w-4 mr-2" />
+                    Admin
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    <span>LoggingOut</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link href="/signin" onClick={() => setIsOpen(false)}>
                 <Button className="w-full justify-start">

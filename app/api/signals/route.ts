@@ -41,6 +41,9 @@ export async function GET(request: NextRequest) {
       supabaseQuery = supabaseQuery.limit(50)
     }
 
+    // Verificar si hay un ETag en la solicitud
+    const ifNoneMatch = request.headers.get("If-None-Match")
+
     const { data: signals, error } = await supabaseQuery
 
     if (error) {
@@ -82,10 +85,33 @@ export async function GET(request: NextRequest) {
         })) || [],
       count: signals?.length || 0,
       unprocessed_count: unprocessedCount || 0,
+      lastUpdated: new Date().toISOString(),
     }
 
-    console.log("Returning signals response")
-    return NextResponse.json(responseData)
+    // Generar un ETag basado en los datos
+    const etag = `W/"${Buffer.from(JSON.stringify(responseData)).toString('base64').substring(0, 27)}"`
+
+    // Si el ETag coincide con el proporcionado en la solicitud, devolver 304 Not Modified
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      console.log("Returning 304 Not Modified for signals")
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          'ETag': etag,
+          'Cache-Control': 'max-age=0, must-revalidate',
+        },
+      })
+    }
+
+    console.log("Returning signals response with ETag")
+    return new NextResponse(JSON.stringify(responseData), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'ETag': etag,
+        'Cache-Control': 'max-age=0, must-revalidate',
+      },
+    })
   } catch (error) {
     console.error("Error fetching signals:", error)
     return NextResponse.json(

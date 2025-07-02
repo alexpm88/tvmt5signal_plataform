@@ -8,6 +8,9 @@ export async function GET(request: NextRequest) {
     const supabase = createServerClient()
     const { searchParams } = new URL(request.url)
     const period = searchParams.get("period") || "30" // days
+    
+    // Verificar si hay un ETag en la solicitud
+    const ifNoneMatch = request.headers.get("If-None-Match")
 
     const periodStart = new Date()
     periodStart.setDate(periodStart.getDate() - Number.parseInt(period))
@@ -216,8 +219,30 @@ export async function GET(request: NextRequest) {
       lastUpdated: new Date().toISOString(),
     }
 
-    console.log("Returning stats response")
-    return NextResponse.json(responseData)
+    // Generar un ETag basado en los datos
+    const etag = `W/"${Buffer.from(JSON.stringify(responseData)).toString('base64').substring(0, 27)}"`
+
+    // Si el ETag coincide con el proporcionado en la solicitud, devolver 304 Not Modified
+    if (ifNoneMatch && ifNoneMatch === etag) {
+      console.log("Returning 304 Not Modified for stats")
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          'ETag': etag,
+          'Cache-Control': 'max-age=0, must-revalidate',
+        },
+      })
+    }
+
+    console.log("Returning stats response with ETag")
+    return new NextResponse(JSON.stringify(responseData), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'ETag': etag,
+        'Cache-Control': 'max-age=0, must-revalidate',
+      },
+    })
   } catch (error) {
     console.error("Error fetching statistics:", error)
     return NextResponse.json(

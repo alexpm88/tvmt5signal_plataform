@@ -10,7 +10,9 @@ export default function DashboardPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 relative">
+        <div className="absolute inset-0 h-full w-full bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-white via-white/80 to-transparent pointer-events-none"></div>
         <div className="px-6 py-12 sm:px-12 lg:px-16">
           <div className="mx-auto max-w-7xl">
             {loading ? (

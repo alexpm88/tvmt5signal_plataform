@@ -161,27 +161,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           user_password: password,
         })
 
-        if (error) {
-          console.error("Authentication error:", error)
-
-          // Handle specific database errors
-          if (error.code === "42883" || error.message.includes("Could not find the function")) {
-            throw new Error(
-              "❌ Sistema de autenticación no configurado.\n\n🔧 SOLUCIÓN:\n1. Ve a tu Supabase Dashboard\n2. Abre el SQL Editor\n3. Ejecuta el script 'final-admin-setup.sql'\n4. Recarga esta página",
-            )
-          } else if (error.code === "42P01") {
-            throw new Error(
-              "❌ Tabla admin_users no existe.\n\n🔧 SOLUCIÓN:\n1. Ejecuta el script SQL de configuración\n2. Recarga esta página",
-            )
-          } else if (error.message.includes("relation") && error.message.includes("does not exist")) {
-            throw new Error(
-              "❌ Base de datos no configurada.\n\n🔧 SOLUCIÓN:\n1. Ejecuta el script 'final-admin-setup.sql' en Supabase\n2. Recarga esta página",
-            )
-          } else {
-            throw new Error(`Error de base de datos: ${error.message}`)
-          }
-        }
-
         if (!data || data.length === 0) {
           throw new Error(
             "❌ Credenciales inválidas\n\n💡 Credenciales por defecto:\nEmail: twmt5signal@gmail.com\nContraseña: admin123!",

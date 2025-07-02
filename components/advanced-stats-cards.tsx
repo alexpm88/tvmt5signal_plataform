@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { TrendingUp, TrendingDown, Target, Award, AlertTriangle, BarChart3, Shield, Zap } from "lucide-react"
 
+
 interface AdvancedStatsCardsProps {
   stats: {
     maxWinStreak: number
@@ -93,7 +94,7 @@ export function AdvancedStatsCards({ stats }: AdvancedStatsCardsProps) {
   const trendColors = {
     up: "text-emerald-500",
     down: "text-red-500",
-    neutral: "text-slate-400",
+    neutral: "text-slate-700",
   }
 
   return (
@@ -104,36 +105,46 @@ export function AdvancedStatsCards({ stats }: AdvancedStatsCardsProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1, duration: 0.6 }}
-          whileHover={{
-            scale: 1.02,
-            transition: { duration: 0.2 },
-          }}
-          whileTap={{ scale: 0.98 }}
+          className="relative h-full w-full"
         >
-          <Card className="relative overflow-hidden border-0 bg-white/80 backdrop-blur-sm shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.15)] hover:-translate-y-1 transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:to-transparent before:pointer-events-none">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-600">{card.title}</p>
-                  <div className="space-y-1">
-                    <p className="text-2xl font-bold text-slate-900">{card.value}</p>
-                    <p className={cn("text-sm font-medium", trendColors[card.trend])}>{card.subtitle}</p>
-                  </div>
-                </div>
-                <div
-                  className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-xl shadow-lg bg-gradient-to-br",
-                    card.color,
-                  )}
-                >
-                  <card.icon className="h-6 w-6 text-white" />
+          {/* Outer glow effect */}
+          <div className={cn("absolute inset-1 rounded-lg bg-gradient-to-br opacity-75 blur-3xl -z-2", card.color)} />
+
+          {/* Background gradient */}
+          <div className={cn("absolute  rounded-xl blur-1xl -z-1 ", card.color)} />
+
+          {/* Content */}
+          <div className="relative z-10 rounded-xl flex h-full flex-col justify-between p-6 backdrop-blur-sm shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.15)] hover:-translate-y-1 transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:to-transparent before:pointer-events-none relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-slate-900">{card.title}</p>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-white">{card.value}</p>
+                  <p
+                    className={cn(
+                      "text-sm font-medium",
+                      trendColors[card.trend as keyof typeof trendColors],
+                    )}
+                  >
+                    {card.subtitle}
+                  </p>
                 </div>
               </div>
+              <div
+                className={cn(
+                  "flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg backdrop-blur-lm",
+                )}
+              >
+                <card.icon
+                  className={cn("h-6 w-6 ", trendColors[card.trend as keyof typeof trendColors])}
+                />
+              </div>
+            </div>
 
               {/* Progress indicator for some metrics */}
               {card.title === "Profit Factor" && (
                 <div className="mt-4">
-                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                     <div
                       className={cn(
                         "h-full transition-all duration-1000 rounded-full",
@@ -147,7 +158,7 @@ export function AdvancedStatsCards({ stats }: AdvancedStatsCardsProps) {
 
               {card.title === "Max Win Streak" && stats.currentWinStreak > 0 && (
                 <div className="mt-4">
-                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-1000 rounded-full"
                       style={{ width: `${(stats.currentWinStreak / stats.maxWinStreak) * 100}%` }}
@@ -155,8 +166,7 @@ export function AdvancedStatsCards({ stats }: AdvancedStatsCardsProps) {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+          </div>
         </motion.div>
       ))}
     </div>
