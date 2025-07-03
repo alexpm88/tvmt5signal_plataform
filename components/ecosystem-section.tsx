@@ -101,7 +101,7 @@ const StatCard = memo(({ item }: { item: any }) => {
           <div className="space-y-2">
             <p className="text-sm font-medium text-slate-500">{item.name}</p>
             <div className="space-y-1">
-              <p className="text-2xl font-bold text-white">{item.value}</p>
+              <p className={cn("text-2xl font-bold", item.valueColor || "text-slate-700")} suppressHydrationWarning>{item.value}</p>
               <p className={cn("text-sm font-medium", item.textColor)}>{item.description}</p>
             </div>
           </div>
@@ -118,48 +118,69 @@ export function EcosystemSection() {
   const { stats, loading } = useStats()
 
   // Usar useMemo para evitar recálculos innecesarios de los datos
-  const ecosystemItems = useMemo(() => [
-    {
-      name: "TradingView",
-      description: "Señales",
-      color: "cyan",
-      bgColor: "bg-cyan-50",
-      borderColor: "border-cyan-100",
-      textColor: "text-cyan-600",
-      icon: Activity,
-      value: loading ? "..." : stats?.totalSignals.toLocaleString() || "0",
-    },
-    {
-      name: "MetaTrader 5",
-      description: "Ejecución",
-      color: "green",
-      bgColor: "bg-green-50",
-      borderColor: "border-green-100",
-      textColor: "text-green-600",
-      icon: Target,
-      value: loading ? "..." : `${stats?.successRate || 0}%`,
-    },
-    {
-      name: "API REST",
-      description: "Gestión",
-      color: "purple",
-      bgColor: "bg-purple-50",
-      borderColor: "border-purple-100",
-      textColor: "text-purple-600",
-      icon: BarChart3,
-      value: loading ? "..." : stats?.processedSignals.toLocaleString() || "0",
-    },
-    {
-      name: "Dashboard",
-      description: "Monitoreo",
-      color: "orange",
-      bgColor: "bg-orange-50",
-      borderColor: "border-orange-100",
-      textColor: "text-orange-600",
-      icon: TrendingUp,
-      value: loading ? "..." : `$${stats?.totalPnL.toLocaleString() || "0"}`,
-    },
-  ], [stats, loading])
+  const ecosystemItems = useMemo(() => {
+    const pnl = stats?.totalPnL || 0;
+    const successRate = stats?.successRate || 0;
+
+    const getPnlColor = () => {
+      if (pnl > 0) return "text-green-700";
+      if (pnl < 0) return "text-red-700";
+      return "text-orange-600";
+    };
+
+    const getSuccessRateColor = () => {
+      if (successRate > 65) return "text-green-700";
+      if (successRate >= 40) return "text-orange-600";
+      return "text-red-700";
+    };
+
+    return [
+      {
+        name: "TradingView",
+        description: "Señales",
+        color: "cyan",
+        bgColor: "bg-cyan-50",
+        borderColor: "border-cyan-100",
+        textColor: "text-cyan-600",
+        icon: Activity,
+        value: loading ? "..." : stats?.totalSignals.toLocaleString() || "0",
+        valueColor: "text-cyan-600",
+      },
+      {
+        name: "MetaTrader 5",
+        description: "Ejecución",
+        color: "green",
+        bgColor: "bg-green-50",
+        borderColor: "border-green-100",
+        textColor: "text-green-600",
+        icon: Target,
+        value: loading ? "..." : `${successRate}%`,
+        valueColor: getSuccessRateColor(),
+      },
+      {
+        name: "API REST",
+        description: "Gestión",
+        color: "purple",
+        bgColor: "bg-purple-50",
+        borderColor: "border-purple-100",
+        textColor: "text-purple-600",
+        icon: BarChart3,
+        value: loading ? "..." : stats?.processedSignals.toLocaleString() || "0",
+        valueColor: "text-purple-600",
+      },
+      {
+        name: "Dashboard",
+        description: "Monitoreo",
+        color: "orange",
+        bgColor: "bg-orange-50",
+        borderColor: "border-orange-100",
+        textColor: getPnlColor(),
+        icon: TrendingUp,
+        value: loading ? "..." : `$${pnl.toLocaleString() || "0"}`,
+        valueColor: getPnlColor(),
+      },
+    ]
+  }, [stats, loading])
 
   // Componente memoizado para el estado del sistema
   const SystemStatus = memo(() => (

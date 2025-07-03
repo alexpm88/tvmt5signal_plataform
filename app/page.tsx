@@ -9,37 +9,38 @@ import { RecentSignalsTable } from "@/components/recent-signals-table"
 import { AdvancedCharts } from "@/components/advanced-charts"
 import { EcosystemSection } from "@/components/ecosystem-section"
 import { ChatExample } from "@/components/chat-example"
-import { useStats } from "@/hooks/use-stats"
+import { useSignals } from "@/hooks/use-signals";
+import { useStats } from "@/hooks/use-stats";
 import { TrendingUp, Activity, DollarSign, Target, RefreshCw, Zap, BarChart3, LineChart, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 
-export default function Dashboard() {
-  const { stats, loading, error, refetch } = useStats()
-  const [mounted, setMounted] = useState(false)
-  
-  // Evitar hidratación renderizando fechas solo en el cliente
+export default function Page() {
+  const { signals, loading: signalsLoading, error: signalsError } = useSignals();
+  const { stats, loading: statsLoading, error: statsError } = useStats(signals);
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
+
+  const error = signalsError || statsError;
+  const loading = signalsLoading || statsLoading;
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-slate-100">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Error</h1>
-          <p className="text-slate-600 mt-2">{error}</p>
-          <Button onClick={refetch} className="mt-4">
-            Reintentar
-          </Button>
+          <h2 className="text-2xl font-bold text-red-600">Error fetching data</h2>
+          <p className="text-slate-600">{error.message}</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-white/80 backdrop-blur-sm">
+    <div className="bg-slate-100 text-slate-800">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
         <div className="absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]"></div>
@@ -70,9 +71,9 @@ export default function Dashboard() {
               <FlipWords 
                 words={[
                   "señales de trading", 
-                  "Analisis con IA", 
-                  "Gestion de Riesgo Avanzado",
-                  "Operaciones en Riempo Real", 
+                  "Análisis con IA", 
+                  "Gestión de Riesgo Avanzado",
+                  "Operaciones en Tiempo Real", 
                   "Seguimiento Avanzado de Rendimiento"
                 ]} 
                 duration={3000} 
@@ -156,7 +157,7 @@ export default function Dashboard() {
                   <BarChart3 className="h-6 w-6 text-indigo-500" />
                   Advanced Analytics
                 </motion.h2>
-                <AdvancedStatsCards stats={stats} />
+                {stats && <AdvancedStatsCards stats={stats} />}
               </div>
 
               {/* Charts */}
@@ -170,11 +171,7 @@ export default function Dashboard() {
                   <LineChart className="h-6 w-6 text-purple-500" />
                   Performance Charts
                 </motion.h2>
-                <AdvancedCharts
-                  cumulativeData={stats.cumulativeData}
-                  dailyStats={stats.dailyStats}
-                  topSymbols={stats.topSymbols}
-                />
+                <AdvancedCharts signals={signals} />
               </div>
 
               {/* Recent Signals */}
@@ -188,7 +185,7 @@ export default function Dashboard() {
                   <Activity className="h-6 w-6 text-emerald-500" />
                   Recent Activity
                 </motion.h2>
-                <RecentSignalsTable signals={stats.recentSignals} />
+                {stats && <RecentSignalsTable signals={stats.recentSignals} />}
               </div>
             </>
           ) : null}
@@ -203,7 +200,7 @@ export default function Dashboard() {
         <div className="mx-auto max-w-7xl px-6 py-2 sm:px-12 lg:px-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             {/* Left side - Last updated */}
-            <div className="text-sm text-slate-600 text-center md:text-left">
+            <div className="text-sm text-slate-600 text-center md:text-left" suppressHydrationWarning>
               Last updated: {stats ? (
                 mounted ? 
                   new Date(stats.lastUpdated).toLocaleString() : 

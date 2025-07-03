@@ -47,9 +47,11 @@ interface Stats {
   lastUpdated: string
 }
 
-export function useStats() {
+import { Signal } from "@/lib/supabase"
+
+export function useStats(signals?: Signal[]) {
   const [stats, setStats] = useState<Stats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!signals)
   const [error, setError] = useState<string | null>(null)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const etagRef = useRef<string | null>(null)
@@ -115,14 +117,155 @@ export function useStats() {
     }
   }
 
+  const calculateStats = (signals: Signal[]) => {
+    const processedTrades = signals.filter(s => s.processed && s.pnl !== null);
+
+    const totalSignals = signals.length;
+    const processedSignals = processedTrades.length;
+    const successfulSignals = processedTrades.filter(s => s.success).length;
+    const winningTrades = processedTrades.filter(s => s.pnl !== null && s.pnl > 0).length;
+    const losingTrades = processedTrades.filter(s => s.pnl !== null && s.pnl < 0).length;
+
+    const totalPnL = processedTrades.reduce((sum, record) => sum + (record.pnl || 0), 0);
+    const successRate = processedSignals > 0 ? (successfulSignals / processedSignals) * 100 : 0;
+    const winLossRatio = losingTrades > 0 ? winningTrades / losingTrades : winningTrades;
+
+    let currentWinStreak = 0;
+    let currentLossStreak = 0;
+    let maxWinStreak = 0;
+    let maxLossStreak = 0;
+    let cumulativePnL = 0;
+
+    const cumulativeData: Stats['cumulativeData'] = [];
+
+    for (let i = 0; i < processedTrades.length; i++) {
+      const trade = processedTrades[i];
+      const isWin = (trade.pnl || 0) > 0;
+
+      if (isWin) {
+        currentWinStreak++;
+        currentLossStreak = 0;
+        maxWinStreak = Math.max(maxWinStreak, currentWinStreak);
+      } else {
+        currentLossStreak++;
+        currentWinStreak = 0;
+        maxLossStreak = Math.max(maxLossStreak, currentLossStreak);
+      }
+
+      cumulativePnL += trade.pnl || 0;
+
+      cumulativeData.push({
+        date: new Date(trade.created_at).toISOString().split("T")[0],
+        cumulativePnL: Math.round(cumulativePnL * 100) / 100,
+        dailyPnL: trade.pnl || 0,
+        trades: i + 1,
+        winStreak: currentWinStreak,
+        lossStreak: currentLossStreak,
+      });
+    }
+
+    const dailyStats = processedTrades.reduce((acc: any[], signal) => {
+      const date = new Date(signal.created_at).toISOString().split("T")[0];
+      const existing = acc.find(item => item.date === date);
+
+      if (existing) {
+        existing.pnl += signal.pnl || 0;
+        existing.trades += 1;
+        existing.wins += (signal.pnl || 0) > 0 ? 1 : 0;
+        existing.losses += (signal.pnl || 0) < 0 ? 1 : 0;
+      } else {
+        acc.push({
+          date,
+          pnl: signal.pnl || 0,
+          trades: 1,
+          wins: (signal.pnl || 0) > 0 ? 1 : 0,
+          losses: (signal.pnl || 0) < 0 ? 1 : 0,
+        });
+      }
+
+      return acc;
+    }, []);
+
+    const avgWin = winningTrades
+      ? processedTrades.filter(t => (t.pnl || 0) > 0).reduce((sum, t) => sum + (t.pnl || 0), 0) / winningTrades
+      : 0;
+
+    const avgLoss = losingTrades
+      ? Math.abs(
+          processedTrades.filter(t => (t.pnl || 0) < 0).reduce((sum, t) => sum + (t.pnl || 0), 0) / losingTrades,
+        )
+      : 0;
+
+    const profitFactor = avgLoss > 0 && losingTrades > 0 ? (avgWin * winningTrades) / (avgLoss * losingTrades) : 0;
+
+    let maxDrawdown = 0;
+    let peak = 0;
+    for (const point of cumulativeData) {
+      if (point.cumulativePnL > peak) {
+        peak = point.cumulativePnL;
+      }
+      const drawdown = peak - point.cumulativePnL;
+      if (drawdown > maxDrawdown) {
+        maxDrawdown = drawdown;
+      }
+    }
+
+    const symbolStats = processedTrades.reduce((acc: any, trade) => {
+      if (!acc[trade.symbol]) {
+        acc[trade.symbol] = { trades: 0, pnl: 0, wins: 0, losses: 0 };
+      }
+      acc[trade.symbol].trades++;
+      acc[trade.symbol].pnl += trade.pnl || 0;
+      if ((trade.pnl || 0) > 0) acc[trade.symbol].wins++;
+      else acc[trade.symbol].losses++;
+      return acc;
+    }, {});
+
+    const topSymbols = Object.entries(symbolStats)
+      .map(([symbol, stats]: [string, any]) => ({
+        symbol,
+        ...stats,
+        winRate: stats.trades > 0 ? (stats.wins / stats.trades) * 100 : 0,
+      }))
+      .sort((a, b) => b.pnl - a.pnl)
+      .slice(0, 10);
+
+    setStats({
+      totalSignals,
+      processedSignals,
+      successfulSignals,
+      activeSignals: totalSignals - processedSignals,
+      successRate: Math.round(successRate * 100) / 100,
+      totalPnL: Math.round(totalPnL * 100) / 100,
+      winningTrades,
+      losingTrades,
+      winLossRatio,
+      maxWinStreak,
+      maxLossStreak,
+      currentWinStreak,
+      currentLossStreak,
+      avgWin,
+      avgLoss,
+      profitFactor,
+      maxDrawdown,
+      recentSignals: signals.slice(0, 10),
+      cumulativeData,
+      dailyStats,
+      topSymbols,
+      lastUpdated: new Date().toISOString(),
+    });
+    setLoading(false);
+  };
+
   useEffect(() => {
-    fetchStats(true)
-
-    // Auto-refresh every 30 seconds, pero sin mostrar indicador de carga
-    const interval = setInterval(() => fetchStats(false), 30000)
-
-    return () => clearInterval(interval)
-  }, [])
+    if (signals) {
+      calculateStats(signals);
+    } else {
+      fetchStats(true);
+      const interval = setInterval(() => fetchStats(false), 30000);
+      return () => clearInterval(interval);
+    }
+  }, [signals]);
 
   return { stats, loading, error, refetch: () => fetchStats(true) }
 }

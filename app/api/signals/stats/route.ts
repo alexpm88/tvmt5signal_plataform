@@ -1,11 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase"
+import { createClient } from '@/utils/supabase/server'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
     console.log("Stats API called")
 
-    const supabase = createServerClient()
+    const cookieStore = cookies()
+    const supabase = createClient(cookieStore)
     const { searchParams } = new URL(request.url)
     const period = searchParams.get("period") || "30" // days
     
@@ -61,7 +63,7 @@ export async function GET(request: NextRequest) {
     const processedSignals = processedSignalsResult.status === "fulfilled" ? processedSignalsResult.value.count || 0 : 0
     const successfulSignals =
       successfulSignalsResult.status === "fulfilled" ? successfulSignalsResult.value.count || 0 : 0
-    const recentSignals = recentSignalsResult.status === "fulfilled" ? recentSignalsResult.value.data || [] : []
+    const recentSignals = recentSignalsResult.status === "fulfilled" && recentSignalsResult.value.data ? recentSignalsResult.value.data : []
     const allSignals = allSignalsResult.status === "fulfilled" ? allSignalsResult.value.data || [] : []
     const winningTrades = winningTradesResult.status === "fulfilled" ? winningTradesResult.value.count || 0 : 0
     const losingTrades = losingTradesResult.status === "fulfilled" ? losingTradesResult.value.count || 0 : 0
@@ -152,7 +154,7 @@ export async function GET(request: NextRequest) {
         )
       : 0
 
-    const profitFactor = avgLoss > 0 ? (avgWin * winningTrades) / (avgLoss * losingTrades) : 0
+    const profitFactor = avgLoss > 0 && losingTrades > 0 ? (avgWin * winningTrades) / (avgLoss * losingTrades) : 0
 
     // Calculate drawdown
     let maxDrawdown = 0
@@ -248,7 +250,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error: "Failed to fetch statistics",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },
     )
