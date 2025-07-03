@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState, useCallback } from "react"
-import { createClient } from '@/utils/supabase/client'
+import { getSupabaseClient, testSupabaseConnection } from "./supabase"
 
 interface AuthContextType {
   user: AdminUser | null
@@ -12,7 +12,7 @@ interface AuthContextType {
   isAdmin: boolean
   error: string | null
   clearError: () => void
-
+  connectionStatus: "checking" | "connected" | "disconnected"
 }
 
 interface AdminUser {
@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "disconnected">("checking")
 
   const clearError = useCallback(() => {
     setError(null)
@@ -65,33 +65,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return Date.now() - timestamp < SESSION_DURATION
   }, [])
 
+  // Test database connection on mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        setConnectionStatus("checking")
+        const result = await testSupabaseConnection()
 
+        if (result.success) {
+          setConnectionStatus("connected")
+        } else {
+          setConnectionStatus("disconnected")
+          setError(`Error de conexión: ${result.error}`)
+        }
+      } catch (error) {
+        setConnectionStatus("disconnected")
+        setError("No se puede conectar a la base de datos")
+        console.error("Connection test failed:", error)
+      }
+    }
+
+    checkConnection()
+  }, [])
 
   // Check stored authentication on mount
   useEffect(() => {
     const checkStoredAuth = () => {
-      setLoading(true)
       try {
         if (typeof window === "undefined") {
+          setLoading(false)
           return
         }
 
         const storedData = localStorage.getItem(STORAGE_KEY)
         if (!storedData) {
+          setLoading(false)
           return
         }
 
         const sessionData = JSON.parse(storedData)
         if (!sessionData.user || !sessionData.timestamp) {
           localStorage.removeItem(STORAGE_KEY)
+          setLoading(false)
           return
         }
 
+        // Check if session is still valid
         if (!isSessionValid(sessionData.timestamp)) {
           localStorage.removeItem(STORAGE_KEY)
+          setLoading(false)
           return
         }
 
+        // Session is valid, restore user
         setUser(sessionData.user)
         setIsAdmin(true)
       } catch (error) {
@@ -104,8 +130,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    checkStoredAuth()
-  }, [isSessionValid])
+    // Only check stored auth if connection is successful
+    if (connectionStatus === "connected") {
+      checkStoredAuth()
+    } else if (connectionStatus === "disconnected") {
+      setLoading(false)
+    }
+  }, [isSessionValid, connectionStatus])
 
   // Add better error handling and fallback for missing functions
   const signIn = useCallback(
@@ -114,46 +145,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(true)
         setError(null)
 
-
+        if (connectionStatus !== "connected") {
+          throw new Error("No hay conexión con la base de datos. Verifica tu configuración.")
+        }
 
         if (!email || !password) {
           throw new Error("Email y contraseña son requeridos")
         }
 
-
+        const supabase = getSupabaseClient()
 
         // First check if the function exists by trying to call it
-        const { data: users, error: userError } = await supabase
-          .from("admin_users")
-          .select("*")
-          .eq("email", email.trim().toLowerCase())
+        const { data, error } = await supabase.rpc("authenticate_admin", {
+          user_email: email.trim().toLowerCase(),
+          user_password: password,
+        })
 
-        if (userError) {
-          throw new Error("Error al consultar el usuario")
-        }
-
-        if (!users || users.length === 0) {
+        if (!data || data.length === 0) {
           throw new Error(
             "❌ Credenciales inválidas\n\n💡 Credenciales por defecto:\nEmail: twmt5signal@gmail.com\nContraseña: admin123!",
           )
         }
 
-        const user = users[0]
-
-        // This is a placeholder for password hashing. 
-        // In a real application, you should use a library like bcrypt to compare hashes.
-        const passwordMatch = user.password_hash === password 
-
-        if (!passwordMatch) {
-          throw new Error(
-            "❌ Credenciales inválidas\n\n💡 Credenciales por defecto:\nEmail: twmt5signal@gmail.com\nContraseña: admin123!",
-          )
-        }
-
-        const userData = {
-          user_id: user.id,
-          user_email: user.email,
-          user_name: user.name,
+        const userData = data[0]
+        if (!userData.user_id || !userData.user_email) {
+          throw new Error("Respuesta de autenticación inválida")
         }
 
         const adminUser: AdminUser = {
@@ -189,7 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false)
       }
     },
-    [setUserData],
+    [connectionStatus, setUserData],
   )
 
   const signOut = useCallback(async () => {
@@ -244,6 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin,
     error,
     clearError,
+    connectionStatus,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

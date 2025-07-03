@@ -18,7 +18,7 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
     const isUser = sender === "user"
     const Icon = isUser ? User : Bot
     const iconColor = isUser ? "text-indigo-600" : "text-cyan-600"
-    const bgGradient = isUser ? "from-indigo-500 to-purple-600" : "from-cyan-600 to-blue-600"
+    const bgGradient = isUser ? "from-indigo-500 to-purple-600" : "from-cyan-500 to-blue-600"
 
     return (
       <motion.div
@@ -28,15 +28,18 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
         transition={{ duration: 0.4 }}
         className={cn("relative h-full w-full", className)}
       >
+        {/* Outer glow effect */}
+        <div className={cn("absolute inset-1 rounded-lg bg-gradient-to-br opacity-75 blur-3xl -z-2", bgGradient)} />
+
         {/* Background gradient */}
-        <div className={cn("absolute rounded-xl ", bgGradient)} />
+        <div className={cn("absolute rounded-xl blur-1xl -z-1", bgGradient)} />
 
         {/* Content */}
         <div className="relative z-10 rounded-xl flex h-full flex-col justify-between p-6 backdrop-blur-sm shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.15)] hover:-translate-y-1 transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:to-transparent before:pointer-events-none relative overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="space-y-2 flex-1">
-              <div className="flex items-center space-x-1">
-                <p className={cn("text-sm font-medium", isUser ? "text-indigo-700" : "text-blue-700")}>
+              <div className="flex items-center space-x-2">
+                <p className={cn("text-sm font-medium", isUser ? "text-indigo-100" : "text-cyan-100")}>
                   {isUser ? "Usuario" : "Asistente"}
                 </p>
                 {timestamp && (
@@ -44,7 +47,7 @@ export const ChatMessage = React.forwardRef<HTMLDivElement, ChatMessageProps>(
                 )}
               </div>
               <div className="space-y-1">
-                <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
+                <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
               </div>
             </div>
             <div className={cn("flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white shadow-lg backdrop-blur-lm")}>
@@ -76,7 +79,11 @@ export function ChatCard({ messages, onSendMessage, className }: ChatCardProps) 
     }
   }
 
-
+  React.useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [messages])
 
   return (
     <div className={cn("flex flex-col h-full w-full", className)}>

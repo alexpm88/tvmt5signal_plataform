@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
+import { createServerClient } from "@/lib/supabase"
 import { MetaTraderSignalSchema, SignalQuerySchema } from "@/lib/validations"
 import { z } from "zod"
 
@@ -9,15 +8,14 @@ export async function GET(request: NextRequest) {
   try {
     console.log("Signals API called")
 
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createServerClient()
     const { searchParams } = new URL(request.url)
 
     const query = SignalQuerySchema.parse({
-      unprocessed: searchParams.get("unprocessed") || "",
-      symbol: searchParams.get("symbol") || "",
-      magic: searchParams.get("magic") || "",
-      limit: searchParams.get("limit") || "50",
+      unprocessed: searchParams.get("unprocessed"),
+      symbol: searchParams.get("symbol"),
+      magic: searchParams.get("magic"),
+      limit: searchParams.get("limit"),
     })
 
     console.log("Query params:", query)

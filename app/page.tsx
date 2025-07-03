@@ -15,27 +15,31 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 
-export default function Page() {
-  const { stats, loading, error, lastUpdated } = useStats();
-  const [mounted, setMounted] = useState(false);
-
+export default function Dashboard() {
+  const { stats, loading, error, refetch } = useStats()
+  const [mounted, setMounted] = useState(false)
+  
+  // Evitar hidratación renderizando fechas solo en el cliente
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-100">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600">Error fetching stats</h2>
-          <p className="text-slate-600">{error}</p>
+          <h1 className="text-2xl font-bold text-red-600">Error</h1>
+          <p className="text-slate-600 mt-2">{error}</p>
+          <Button onClick={refetch} className="mt-4">
+            Reintentar
+          </Button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="bg-slate-100 text-slate-800">
+    <div className="min-h-screen bg-white/80 backdrop-blur-sm">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900">
         <div className="absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]"></div>
@@ -66,9 +70,9 @@ export default function Page() {
               <FlipWords 
                 words={[
                   "señales de trading", 
-                  "Análisis con IA", 
-                  "Gestión de Riesgo Avanzado",
-                  "Operaciones en Tiempo Real", 
+                  "Analisis con IA", 
+                  "Gestion de Riesgo Avanzado",
+                  "Operaciones en Riempo Real", 
                   "Seguimiento Avanzado de Rendimiento"
                 ]} 
                 duration={3000} 
@@ -199,7 +203,7 @@ export default function Page() {
         <div className="mx-auto max-w-7xl px-6 py-2 sm:px-12 lg:px-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             {/* Left side - Last updated */}
-            <div className="text-sm text-slate-600 text-center md:text-left" suppressHydrationWarning>
+            <div className="text-sm text-slate-600 text-center md:text-left">
               Last updated: {stats ? (
                 mounted ? 
                   new Date(stats.lastUpdated).toLocaleString() : 

@@ -34,7 +34,6 @@ import { Edit, Trash2, Plus, Search, Filter, Download, RefreshCw } from "lucide-
 import { formatDistanceToNow } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import type { Signal } from "@/lib/supabase"
-import { AdvancedCharts } from "./advanced-charts"
 
 interface SignalsDashboardProps {
   signals: Signal[]
@@ -239,9 +238,6 @@ export function SignalsDashboard({ signals, onRefresh, loading }: SignalsDashboa
 
   return (
     <div className="space-y-6">
-      {/* Advanced Charts */}
-      <AdvancedCharts signals={filteredSignals} />
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -438,7 +434,7 @@ export function SignalsDashboard({ signals, onRefresh, loading }: SignalsDashboa
                       {signal.pnl ? `$${signal.pnl.toFixed(2)}` : "-"}
                     </TableCell>
                     <TableCell>{getStatusBadge(signal)}</TableCell>
-                    <TableCell className="text-sm text-slate-600" suppressHydrationWarning>
+                    <TableCell className="text-sm text-slate-600">
                       {formatDistanceToNow(new Date(signal.timestamp), { addSuffix: true })}
                     </TableCell>
                     <TableCell>

@@ -23,79 +23,61 @@ import {
 import { motion } from "framer-motion"
 import { TrendingUp, Target, BarChart3, PieChartIcon, LineChart } from "lucide-react"
 
-import { Signal } from '@/lib/supabase';
-
 interface AdvancedChartsProps {
-  signals: Signal[];
+  cumulativeData: Array<{
+    date: string
+    cumulativePnL: number
+    dailyPnL: number
+    trades: number
+    winStreak: number
+    lossStreak: number
+  }>
+  dailyStats: Array<{
+    date: string
+    pnl: number
+    trades: number
+    wins: number
+    losses: number
+  }>
+  topSymbols: Array<{
+    symbol: string
+    trades: number
+    pnl: number
+    wins: number
+    losses: number
+    winRate: number
+  }>
 }
 
-const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#ef4444", "#06b6d4", "#84cc16"];
+const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#ef4444", "#06b6d4", "#84cc16"]
 
-export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
-  const processedSignals = signals.filter(s => s.processed && s.pnl !== null);
-
-  const dailyStats = Array.from(processedSignals.reduce((acc, signal) => {
-    const date = new Date(signal.created_at).toISOString().split('T')[0];
-    if (!acc.has(date)) {
-      acc.set(date, { date, pnl: 0, trades: 0, wins: 0, losses: 0 });
-    }
-    const day = acc.get(date)!;
-    day.pnl += signal.pnl || 0;
-    day.trades += 1;
-    if (signal.pnl !== null) {
-      if (signal.pnl > 0) day.wins += 1;
-      else if (signal.pnl < 0) day.losses += 1;
-    }
-    return acc;
-  }, new Map<string, { date: string; pnl: number; trades: number; wins: number; losses: number; }>()).values());
-
-  dailyStats.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  let cumulativePnL = 0;
-  const cumulativeData = dailyStats.map(day => {
-    cumulativePnL += day.pnl;
-    return { ...day, cumulativePnL };
-  });
-
-  const topSymbols = Array.from(processedSignals.reduce((acc, signal) => {
-    if (!acc.has(signal.symbol)) {
-      acc.set(signal.symbol, { symbol: signal.symbol, trades: 0, pnl: 0, wins: 0, losses: 0 });
-    }
-    const sym = acc.get(signal.symbol)!;
-    sym.trades += 1;
-    sym.pnl += signal.pnl || 0;
-    if (signal.pnl !== null) {
-      if (signal.pnl > 0) sym.wins += 1;
-      else if (signal.pnl < 0) sym.losses += 1;
-    }
-    return acc;
-  }, new Map<string, { symbol: string; trades: number; pnl: number; wins: number; losses: number; }>()).values());
-
-  topSymbols.forEach(s => (s as any).winRate = s.trades > 0 ? (s.wins / s.trades) * 100 : 0);
-
+export function AdvancedCharts({ cumulativeData, dailyStats, topSymbols }: AdvancedChartsProps) {
+  // Prepare scatter plot data
   const scatterData = dailyStats.map((day, index) => ({
     x: index + 1,
     y: day.pnl,
     wins: day.wins,
     losses: day.losses,
     date: new Date(day.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    fill: day.pnl > 0 ? "#006400" : "#8B0000",
-  }));
+    fill: day.pnl > 0 ? "#10b981" : "#ef4444",
+  }))
 
+  // Prepare drawdown data
   const drawdownData = cumulativeData.map((point, index) => {
-    const peak = Math.max(...cumulativeData.slice(0, index + 1).map(p => p.cumulativePnL));
-    const drawdown = peak - point.cumulativePnL;
+    const peak = Math.max(...cumulativeData.slice(0, index + 1).map((p) => p.cumulativePnL))
+    const drawdown = peak - point.cumulativePnL
     return {
       ...point,
       drawdown: -drawdown,
       date: new Date(point.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    };
-  });
+    }
+  })
 
+  // Prepare win/loss distribution
   const distributionData = [
     { name: "Winning Trades", value: topSymbols.reduce((sum, s) => sum + s.wins, 0), fill: "#10b981" },
     { name: "Losing Trades", value: topSymbols.reduce((sum, s) => sum + s.losses, 0), fill: "#ef4444" },
-  ];
+  ]
 
   return (
     <div className="grid gap-8 lg:grid-cols-2">
@@ -107,7 +89,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
         className="relative h-full w-full"
       >
         {/* Outer glow effect */}
-        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 opacity-25 blur-3xl -z-2" />
+        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 opacity-75 blur-3xl -z-2" />
 
         {/* Background gradient */}
         <div className="absolute rounded-xl blur-1xl from-indigo-500 to-purple-600 -z-1" />
@@ -117,7 +99,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
           <Card className="border-0 bg-transparent shadow-none">
             <CardHeader className="relative z-10">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl font-semibold text-slate-700">Equity Curve</CardTitle>
+                <CardTitle className="text-xl font-semibold text-white">Equity Curve</CardTitle>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg backdrop-blur-lm">
                   <TrendingUp className="h-6 w-6 text-indigo-500" />
                 </div>
@@ -129,23 +111,23 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
                 <AreaChart data={cumulativeData}>
                   <defs>
                     <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="rgb(36, 142, 0)"  stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="rgb(0, 255, 34)"  stopOpacity={0.3} />
+                      <stop offset="5%" stopColor="#ffffff" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#ffffff" stopOpacity={0.2} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
                   <XAxis
                     dataKey="date"
-                    stroke="#334155"
+                    stroke="rgba(255, 255, 255, 0.7)"
                     fontSize={12}
                     tickFormatter={(value) =>
                       new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
                     }
                   />
-                  <YAxis stroke="#334155" fontSize={12} tickFormatter={(value) => `$${value.toFixed(0)}`} />
+                  <YAxis stroke="rgba(255, 255, 255, 0.7)" fontSize={12} tickFormatter={(value) => `$${value.toFixed(0)}`} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "rgba(14, 20, 43, 0.7)" ,
+                      backgroundColor: "rgba(255, 255, 255, 0.95)",
                       border: "none",
                       borderRadius: "8px",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
@@ -156,7 +138,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
                   <Area
                     type="monotone"
                     dataKey="cumulativePnL"
-                    stroke="rgb(0, 65, 20)" 
+                    stroke="#ffffff"
                     strokeWidth={3}
                     fillOpacity={1}
                     fill="url(#equityGradient)"
@@ -177,17 +159,17 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
         className="relative h-full w-full"
       >
         {/* Outer glow effect */}
-        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 opacity-25 blur-3xl -z-2" />
+        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 opacity-75 blur-3xl -z-2" />
 
         {/* Background gradient */}
-        <div className="absolute rounded-xl blur-1xl from-red-200 to-rose-500 -z-1" />
+        <div className="absolute rounded-xl blur-1xl from-red-500 to-rose-600 -z-1" />
 
         {/* Content */}
         <div className="relative z-10 rounded-xl flex h-full flex-col justify-between backdrop-blur-sm shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.15)] hover:-translate-y-1 transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:to-transparent before:pointer-events-none relative overflow-hidden">
           <Card className="border-0 bg-transparent shadow-none">
             <CardHeader className="relative z-10">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl font-semibold text-slate-700">Drawdown Analysis</CardTitle>
+                <CardTitle className="text-xl font-semibold text-white">Drawdown Analysis</CardTitle>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg backdrop-blur-lm">
                   <LineChart className="h-6 w-6 text-red-500" />
                 </div>
@@ -199,27 +181,27 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
                 <AreaChart data={drawdownData}>
                   <defs>
                     <linearGradient id="drawdownGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="rgba(255, 0, 64, 0.7)"  stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="rgb(85, 0, 0)"  stopOpacity={0.8} />
+                      <stop offset="5%" stopColor="#ffffff" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#ffffff" stopOpacity={0.2} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="date" stroke="#334155" fontSize={12} />
-                  <YAxis stroke="#334155" fontSize={12} tickFormatter={(value) => `$${value.toFixed(0)}`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
+                  <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.7)" fontSize={12} />
+                  <YAxis stroke="rgba(255, 255, 255, 0.7)" fontSize={12} tickFormatter={(value) => `$${value.toFixed(0)}`} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "rgba(14, 20, 43, 0.7)" ,
+                      backgroundColor: "rgba(255, 255, 255, 0.95)",
                       border: "none",
                       borderRadius: "8px",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                     }}
                     formatter={(value: number) => [`$${Math.abs(value).toFixed(2)}`, "Drawdown"]}
                   />
-                  <ReferenceLine y={0} stroke="rgba(14, 20, 43, 0.7)"   strokeDasharray="2 2" />
+                  <ReferenceLine y={0} stroke="rgba(255, 255, 255, 0.5)" strokeDasharray="2 2" />
                   <Area
                     type="monotone"
                     dataKey="drawdown"
-                    stroke="rgba(116, 0, 8, 0.7)" 
+                    stroke="#ffffff"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#drawdownGradient)"
@@ -240,7 +222,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
         className="relative h-full w-full"
       >
         {/* Outer glow effect */}
-        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 opacity-25 blur-3xl -z-2" />
+        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 opacity-75 blur-3xl -z-2" />
 
         {/* Background gradient */}
         <div className="absolute rounded-xl blur-1xl from-purple-500 to-violet-600 -z-1" />
@@ -250,7 +232,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
           <Card className="border-0 bg-transparent shadow-none">
             <CardHeader className="relative z-10">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl font-semibold text-slate-700">Daily P&L Scatter</CardTitle>
+                <CardTitle className="text-xl font-semibold text-white">Daily P&L Scatter</CardTitle>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg backdrop-blur-lm">
                   <Target className="h-6 w-6 text-purple-500" />
                 </div>
@@ -260,12 +242,12 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart data={scatterData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
                   <XAxis
                     type="number"
                     dataKey="x"
                     name="Day"
-                    stroke="#334155"
+                    stroke="rgba(255, 255, 255, 0.7)"
                     fontSize={12}
                     tickFormatter={(value) => `Day ${value}`}
                   />
@@ -273,7 +255,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
                     type="number"
                     dataKey="y"
                     name="P&L"
-                    stroke="#334155"
+                    stroke="rgba(255, 255, 255, 0.7)"
                     fontSize={12}
                     tickFormatter={(value) => `$${value.toFixed(0)}`}
                   />
@@ -297,11 +279,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
                     }}
                   />
                   <ReferenceLine y={0} stroke="rgba(255, 255, 255, 0.5)" strokeDasharray="2 2" />
-                  <Scatter dataKey="y">
-                    {scatterData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Scatter>
+                  <Scatter dataKey="y" fill="#ffffff" />
                 </ScatterChart>
               </ResponsiveContainer>
             </div>
@@ -318,7 +296,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
         className="relative h-full w-full"
       >
         {/* Outer glow effect */}
-        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 opacity-25 blur-3xl -z-2" />
+        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 opacity-75 blur-3xl -z-2" />
 
         {/* Background gradient */}
         <div className="absolute rounded-xl blur-1xl from-blue-500 to-indigo-600 -z-1" />
@@ -328,7 +306,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
           <Card className="border-0 bg-transparent shadow-none">
             <CardHeader className="relative z-10">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl font-semibold text-slate-700">Top Symbols Performance</CardTitle>
+                <CardTitle className="text-xl font-semibold text-white">Top Symbols Performance</CardTitle>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg backdrop-blur-lm">
                   <BarChart3 className="h-6 w-6 text-blue-500" />
                 </div>
@@ -338,9 +316,9 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={topSymbols.slice(0, 8)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="symbol" stroke="#334155" fontSize={12} />
-                  <YAxis stroke="#334155" fontSize={12} tickFormatter={(value) => `$${value.toFixed(0)}`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
+                  <XAxis dataKey="symbol" stroke="rgba(255, 255, 255, 0.7)" fontSize={12} />
+                  <YAxis stroke="rgba(255, 255, 255, 0.7)" fontSize={12} tickFormatter={(value) => `$${value.toFixed(0)}`} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -361,7 +339,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
                   <Line 
                     type="monotone" 
                     dataKey="pnl" 
-                    stroke="rgb(255, 255, 255)" 
+                    stroke="rgba(255, 255, 255, 0.7)" 
                     strokeWidth={2} 
                     dot={false} 
                     activeDot={false}
@@ -377,12 +355,25 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
                       let pointSize;
                       
                       if (payload.pnl < 0) {
-                        fillColor = "#8B0000"; // Rojo oscuro
-                        pointSize = 6;
+                        // Calcular la intensidad del color fucsia basado en qué tan negativo es el valor
+                        const minPnl = Math.min(...topSymbols.map(s => s.pnl < 0 ? s.pnl : 0));
+                        // Intensidad aumenta cuanto más negativo es el valor
+                        const intensity = Math.abs(payload.pnl) / Math.abs(minPnl);
+                        // Tamaño aumenta con la intensidad
+                        pointSize = 4 + (intensity * 4);
+                        // Opacidad desde 0 (transparente) hasta 1 (completamente visible)
+                        fillColor = `rgba(255, 0, 255, ${intensity.toFixed(2)})`;
                       } else if (payload.pnl > 0) {
-                        fillColor = "#006400"; // Verde oscuro
-                        pointSize = 6;
+                        // Calcular la intensidad del color verde basado en qué tan positivo es el valor
+                        const maxPnl = Math.max(...topSymbols.map(s => s.pnl > 0 ? s.pnl : 0));
+                        // Intensidad aumenta cuanto más positivo es el valor
+                        const intensity = payload.pnl / maxPnl;
+                        // Tamaño aumenta con la intensidad
+                        pointSize = 4 + (intensity * 4);
+                        // Opacidad desde 0 (transparente) hasta 1 (completamente visible)
+                        fillColor = `rgba(0, 255, 0, ${intensity.toFixed(2)})`;
                       } else {
+                        // Para valor 0, punto pequeño y completamente transparente
                         pointSize = 3;
                         fillColor = 'rgba(255, 255, 255, 0)';
                       }
@@ -416,7 +407,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
         className="lg:col-span-2 relative h-full w-full"
       >
         {/* Outer glow effect */}
-        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 opacity-25 blur-3xl -z-2" />
+        <div className="absolute inset-1 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-600 opacity-75 blur-3xl -z-2" />
 
         {/* Background gradient */}
         <div className="absolute rounded-xl blur-1xl from-cyan-500 to-teal-600 -z-1" />
@@ -426,7 +417,7 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
           <Card className="border-0 bg-transparent shadow-none">
             <CardHeader className="relative z-10">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl font-semibold text-slate-700">Win/Loss Distribution & Daily Volume</CardTitle>
+                <CardTitle className="text-xl font-semibold text-white">Win/Loss Distribution & Daily Volume</CardTitle>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg backdrop-blur-lm">
                   <PieChartIcon className="h-6 w-6 text-cyan-500" />
                 </div>
@@ -629,23 +620,17 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={dailyStats}>
-                    <defs>
-                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#006400" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#006400" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgb(255, 255, 255)" />
                   <XAxis
                     dataKey="date"
-                    stroke="#334155"
+                    stroke="rgb(255, 255, 255)"
                     fontSize={12}
                     tickFormatter={(value) =>
                       new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })
                     }
                   />
-                  <YAxis yAxisId="left" stroke="#334155" fontSize={12} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#334155" fontSize={12} />
+                  <YAxis yAxisId="left" stroke="rgba(255, 255, 255, 0.7)" fontSize={12} />
+                  <YAxis yAxisId="right" orientation="right" stroke="rgba(255, 255, 255, 0.7)" fontSize={12} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -654,12 +639,12 @@ export function AdvancedCharts({ signals = [] }: AdvancedChartsProps) {
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                     }}
                   />
-                  <Bar yAxisId="left" dataKey="trades" fill="url(#barGradient)" name="Total Trades" radius={[10, 10, 0, 0]} />
+                  <Bar yAxisId="left" dataKey="trades" fill="rgba(255, 255, 255, 0.8)" name="Total Trades" />
                   <Line
                     yAxisId="right"
                     type="monotone"
                     dataKey="pnl"
-                    stroke="rgba(4, 66, 0, 0.95)"
+                    stroke="#ffffff"
                     strokeWidth={2}
                     name="Daily P&L"
                   />

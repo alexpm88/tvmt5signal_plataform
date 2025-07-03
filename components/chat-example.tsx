@@ -46,21 +46,21 @@ export function ChatExample() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="space-y-8 p-8 rounded-2xl border border-slate-200 shadow-sm backdrop-blur-sm bg-white/20 max-w-xl w-full "
+            className="space-y-8 p-8 rounded-2xl border border-slate-200 shadow-sm backdrop-blur-sm bg-white/20 max-w-xl w-full"
           >
             <div className="space-y-8">
               <div className="space-y-4">
-                <h2 className=" font-bold text-3xl bg-gradient-to-r from-indigo-600 via-red-rosa-500 to-purple-600 bg-clip-text text-transparent  sm:text-4xl ">
-                  {" "}
-                  IA Agent  
-                  <span className=" tracking-tight text-slate-900">
-                    integrado en tu vida del traiding
+                <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                  Sistema de
+                  <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    {" "}
+                    Chat Integrado
                   </span>
                 </h2>
 
                 <p className="text-lg text-slate-600 leading-relaxed">
-                  Comunícate en tiempo real con nuestro Asistente integrado. Recibe asistencia
-                  y respuestas instantáneas a tus consultas sobre trading y analsis actualizado de lso mercados y posibles oportunidades a considerar, siemrpe bajo su responsabilidad. Solo ofrece un panorama general nformado de lso mercados y lo mas destacado en noticias y datos.
+                  Comunícate en tiempo real con nuestro sistema de chat integrado. Recibe asistencia
+                  y respuestas instantáneas a tus consultas sobre trading.
                 </p>
               </div>
 
@@ -68,9 +68,11 @@ export function ChatExample() {
                 <h3 className="text-xl font-semibold text-slate-900">Características principales:</h3>
                 <div className="grid gap-4">
                   {[
-                    "Analisis Diario de Noticias",
-                    "analissi de datos Macroeconomicos",
-                    "Ideas sobre activos con garndes oportunidades",
+                    "Interfaz moderna y responsive",
+                    "Estilo consistente con el resto de la plataforma",
+                    "Animaciones fluidas para mejor experiencia de usuario",
+                    "Soporte para mensajes largos y formato de texto",
+                    "Indicadores de estado y tiempo de mensajes",
                   ].map((feature, index) => (
                     <motion.div
                       key={index}
