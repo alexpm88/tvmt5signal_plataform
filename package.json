@@ -40,7 +40,7 @@
     "@radix-ui/react-tooltip": "latest",
     "@react-three/fiber": "latest",
     "@supabase/auth-helpers-nextjs": "latest",
-    "@supabase/ssr": "^0.6.1",
+    "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "@tabler/icons-react": "latest",
     "@types/bcryptjs": "^2.4.6",
