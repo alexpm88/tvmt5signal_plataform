@@ -45,7 +45,7 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
         <Card className="border-0 bg-transparent shadow-none">
           <CardHeader className="relative z-10">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-white">Performance Overview</CardTitle>
+                            <CardTitle className="text-xl font-bold text-slate-700">Performance Overview</CardTitle>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg backdrop-blur-lm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-500" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
@@ -59,26 +59,26 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
                 <AreaChart data={cumulativeData}>
                   <defs>
                     <linearGradient id="colorPnl" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#818cf8" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#818cf8" stopOpacity={0.2} />
+                      <stop offset="5%" stopColor="rgba(14, 20, 43, 0.7)"  stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="rgba(14, 20, 43, 0.7)"  stopOpacity={0.2} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.2)" />
-                  <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.7)" fontSize={12} />
-                  <YAxis stroke="rgba(255, 255, 255, 0.7)" fontSize={12} tickFormatter={(value) => `$${value.toFixed(0)}`} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" />
+                  <XAxis dataKey="date" stroke="rgba(14, 20, 43, 0.7)"  fontSize={12} />
+                  <YAxis stroke="rgba(14, 20, 43, 0.7)"  fontSize={12} tickFormatter={(value) => `$${value.toFixed(0)}`} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "rgba(255, 255, 255, 0.95)",
+                      backgroundColor: "rgba(14, 20, 43, 0.7)" ,
                       border: "none",
                       borderRadius: "8px",
                       boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                     }}
                     formatter={(value: number) => [`$${value.toFixed(2)}`, "Cumulative P&L"]}
                   />
-                  <Area
+                                    <Area
                     type="monotone"
                     dataKey="cumulativePnl"
-                    stroke="#ffffff"
+                    stroke="rgba(14, 20, 43, 0.7)" 
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorPnl)"

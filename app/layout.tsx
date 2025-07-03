@@ -26,6 +26,7 @@ export default function RootLayout({
         <div
           className="fixed inset-0 h-full w-full z-[-1] bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"
         ></div>
+        <div className="fixed top-0 left-0 right-0 h-[20vh] w-full z-[-1] bg-gradient-to-b from-white to-transparent pointer-events-none" />
         <AuthProvider>
           <TradingNavbar />
           <div className="pt-20">{children}</div>

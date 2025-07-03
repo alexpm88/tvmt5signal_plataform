@@ -1,11 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase"
+import { createClient } from '@/utils/supabase/server'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
     console.log("Stats API called")
 
-    const supabase = createServerClient()
+    const cookieStore = cookies()
+    const supabase = createClient(cookieStore)
     const { searchParams } = new URL(request.url)
     const period = searchParams.get("period") || "30" // days
     
@@ -152,7 +154,7 @@ export async function GET(request: NextRequest) {
         )
       : 0
 
-    const profitFactor = avgLoss > 0 ? (avgWin * winningTrades) / (avgLoss * losingTrades) : 0
+    const profitFactor = avgLoss > 0 && losingTrades > 0 ? (avgWin * winningTrades) / (avgLoss * losingTrades) : 0
 
     // Calculate drawdown
     let maxDrawdown = 0
